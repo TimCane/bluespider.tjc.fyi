@@ -9,25 +9,25 @@ Coolify on a Hetzner VPS.
 grade-feedback history. No personal ticks. Source of truth is markdown in git;
 the admin is a thin authoring layer that commits markdown.
 
-## Collections (4)
+## Collections (2)
 
 ```
 src/content/
-  areas/cave.md
-  walls/cave_01.md
-  sets/2026-06-01_cave_01/index.md
-  sets/2026-06-01_cave_01/image.png   # optional
-  routes/2026-06-01_cave_01_green.md
+  walls/the-cave_01.md
+  sets/2026-06-01_the-cave_01/index.md
+  sets/2026-06-01_the-cave_01/image.png   # optional
 ```
 
-- **Area** - `name`, `order`. id = slug (`cave`).
-- **Wall** - `number`, `area: reference('areas')`, `features` (string[] tags).
-  id = `{area}_{wall}` (`cave_01`).
+- **Wall** - `number`, `area` (string display name, e.g. "The Cave"),
+  `features` (string[] tags). id = `{areaSlug}_{number}` (`the-cave_01`).
 - **Set** - `wall: reference('walls')`, `setDate`, `stripDate?`, `setter`
-  (string), `discipline` (`lead|top-rope|both`), `image?`. Body = set notes.
-  id = `{setDate}_{area}_{wall}`.
-- **Route** - `set: reference('sets')`, `colour` (enum), `initialGrade` (enum),
-  `finalGrade?` (enum). Body = route notes. id = `{set}_{colour}`.
+  (string), `discipline` (`lead|top-rope|both`), `image?`, and `routes`: an
+  array of `{ colour, initialGrade, finalGrade? }`. Body = optional set notes.
+  id = `{setDate}_{areaSlug}_{wall}`.
+
+Routes are embedded on the Set (no independent identity in v1); area is free
+text on the Wall (admin offers a dropdown of existing areas plus "new" to avoid
+typos).
 
 ## Enums
 
@@ -38,16 +38,19 @@ src/content/
 
 ## Rules / derived
 
-- **Current set** = the wall's set with no `stripDate`. **Current routes** =
-  routes whose set is current.
-- **Official grade** = `finalGrade ?? initialGrade`; show `initial -> final`
-  when changed.
-- Colour is unique within a set (route natural key).
+- **Current set** = the wall's set with no `stripDate`. **Current routes** = the
+  current set's `routes`.
+- **Official grade** (per route) = `finalGrade ?? initialGrade`; show
+  `initial -> final` when changed.
+- Colour is unique within a set's `routes`.
+- **Area order** on Home defaults to alphabetical; an optional `AREA_ORDER`
+  config array overrides it if a physical order is wanted.
 
 ## Pages
 
-- **`/`** - areas (by `order`) -> walls (by `number`) -> current-set card:
-  image, setter, set date, route chips ordered by grade.
+- **`/`** - walls grouped by `area` (alphabetical / `AREA_ORDER`) -> walls by
+  `number` -> current-set card: image, setter, set date, route chips ordered by
+  grade.
 - **`/walls/[wall]`** - current set plus reverse-chron past sets.
 - **`/sets/[set]`** - full route list, setter, set/strip dates, image, notes.
 - **`/regrade`** - dedicated page: routes on current sets where
@@ -63,10 +66,11 @@ src/content/
 - **Flow:** form submit -> server writes files -> single atomic commit to `main`
   via the GitHub Git Data API (blobs -> tree -> commit -> update ref) -> Coolify
   deploy webhook rebuilds (~1-2 min) -> live.
-- **New set:** pick area/wall/date/setter/discipline plus colours; generates the
-  set folder (`index.md` + uploaded `image.png`) and a route stub per colour,
-  and auto-stamps the previous current set's `stripDate = new setDate`.
-- **Regrade:** edit a current route's `finalGrade`.
+- **New set:** pick area (existing or new) / wall / date / setter / discipline,
+  plus a colour + grades per route; writes one set file (`index.md` with the
+  `routes` array) plus the uploaded `image.png`, and auto-stamps the previous
+  current set's `stripDate = new setDate`. One commit, two files.
+- **Regrade:** edit a route's `finalGrade` in the set file.
 - **Auth:** single shared password (v1).
 - **GitHub access:** fine-grained PAT (single repo, contents read/write), stored
   as a Coolify env var, server-side only.
