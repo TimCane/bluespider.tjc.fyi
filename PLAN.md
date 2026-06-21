@@ -1,11 +1,13 @@
 # Climbing gym route catalogue - plan
 
-**Stack:** Astro 5, strict TS, Tailwind, frontend-design pass for a
-restrained/editorial identity. Static build, deployed via Coolify on a Hetzner
-VPS.
+**Stack:** Astro 5 (node adapter, hybrid), strict TS, Tailwind, frontend-design
+pass for a restrained/editorial identity. Public catalogue pages are
+prerendered; a server-rendered admin handles on-site data entry. Deployed via
+Coolify on a Hetzner VPS.
 
 **Purpose:** gym catalogue only - what's up now plus set/strip and
-grade-feedback history. No personal ticks.
+grade-feedback history. No personal ticks. Source of truth is markdown in git;
+the admin is a thin authoring layer that commits markdown.
 
 ## Collections (4)
 
@@ -50,10 +52,29 @@ src/content/
 - **`/sets/[set]`** - full route list, setter, set/strip dates, image, notes.
 - **`/regrade`** - dedicated page: routes on current sets where
   `setDate <= today-14d` and `finalGrade` empty.
+- **`/admin`** - mobile-first authoring UI (server-rendered), single-password
+  auth.
+- **`/api/commit`** - server endpoint that writes markdown + image and commits.
 - No per-route pages, no filter views in v1.
 
-## Tooling
+## Authoring (on-site admin)
 
-- **`pnpm new-set`** scaffold - prompts area/wall/date/setter/discipline/colours,
-  stamps the set folder plus route stubs, and auto-fills the previous current
-  set's `stripDate = new setDate` (confirm prompt).
+- **Goal:** enter data from your phone at the gym; git stays the source of truth.
+- **Flow:** form submit -> server writes files -> single atomic commit to `main`
+  via the GitHub Git Data API (blobs -> tree -> commit -> update ref) -> Coolify
+  deploy webhook rebuilds (~1-2 min) -> live.
+- **New set:** pick area/wall/date/setter/discipline plus colours; generates the
+  set folder (`index.md` + uploaded `image.png`) and a route stub per colour,
+  and auto-stamps the previous current set's `stripDate = new setDate`.
+- **Regrade:** edit a current route's `finalGrade`.
+- **Auth:** single shared password (v1).
+- **GitHub access:** fine-grained PAT (single repo, contents read/write), stored
+  as a Coolify env var, server-side only.
+- **Live state:** admin reads current repo content via the GitHub API to fill
+  dropdowns and find the previous current set, so it is never stale between
+  rebuilds.
+- **Images:** committed as uploaded (no client-side compression). Raw phone
+  photos will grow the repo over time.
+- **No offline:** assumes gym connectivity.
+- Content commits go directly to `main` - a CMS exception to the usual PR rule,
+  since this is data, not code.
