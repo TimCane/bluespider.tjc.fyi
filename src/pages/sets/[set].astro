@@ -3,7 +3,7 @@ import { getCollection, getEntry, render } from 'astro:content'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { Image } from 'astro:assets'
 import { getRoutesForSet } from '@/lib/catalogue'
-import { COLOUR_CHIP } from '@/lib/colours'
+import { COLOUR_CHIP, chipBackground, colourLabel } from '@/lib/colours'
 import { officialGrade } from '@/lib/grades'
 import { formatDate } from '@/lib/dates'
 
@@ -46,7 +46,7 @@ const notesById = new Map(routeNotes.map((n) => [n.id, n.Content]))
     <dl class="text-muted mt-3 space-y-1 text-sm">
       <div class="flex gap-2">
         <dt class="eyebrow w-24 shrink-0">Setters</dt>
-        <dd class="text-ink">{set.data.setters.join(', ')}</dd>
+        <dd class="text-ink">{set.data.setters.join(', ') || 'Unknown'}</dd>
       </div>
       <div class="flex gap-2">
         <dt class="eyebrow w-24 shrink-0">Discipline</dt>
@@ -93,10 +93,10 @@ const notesById = new Map(routeNotes.map((n) => [n.id, n.Content]))
                       'inline-block h-4 w-4 rounded-full',
                       chip.border && 'ring-1 ring-line',
                     ]}
-                    style={`background:${chip.hex}`}
+                    style={`background:${chipBackground(route.data.colour)}`}
                     aria-hidden="true"
                   />
-                  <span class="capitalize">{route.data.colour}</span>
+                  <span>{colourLabel(route.data.colour)}</span>
                 </div>
                 <span class="font-mono font-bold">
                   {regraded ? (

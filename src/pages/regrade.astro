@@ -3,7 +3,7 @@ export const prerender = false
 
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getRegradeCandidates } from '@/lib/catalogue'
-import { COLOUR_CHIP } from '@/lib/colours'
+import { COLOUR_CHIP, chipBackground, colourLabel } from '@/lib/colours'
 import { todayInGym, daysBetween, formatDate } from '@/lib/dates'
 
 const today = todayInGym()
@@ -40,7 +40,7 @@ const rows = await getRegradeCandidates(today)
                     'inline-block h-4 w-4 shrink-0 rounded-full',
                     chip.border && 'ring-1 ring-line',
                   ]}
-                  style={`background:${chip.hex}`}
+                  style={`background:${chipBackground(route.data.colour)}`}
                   aria-hidden="true"
                 />
                 <span class="min-w-0 flex-1">
@@ -48,7 +48,7 @@ const rows = await getRegradeCandidates(today)
                     {area.data.name} &middot; Wall {wall.data.number}
                   </span>
                   <span class="text-muted font-mono block text-xs">
-                    {route.data.colour} &middot; set {formatDate(set.data.setDate)}
+                    {colourLabel(route.data.colour)} &middot; set {formatDate(set.data.setDate)}
                   </span>
                 </span>
                 <span class="text-right">

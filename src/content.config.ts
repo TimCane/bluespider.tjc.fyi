@@ -43,7 +43,7 @@ const sets = defineCollection({
       wall: reference('walls'),
       setDate: dateString,
       stripDate: dateString.optional(),
-      setters: z.array(z.string()).min(1),
+      setters: z.array(z.string()).default([]),
       discipline: z.enum(['lead', 'top-rope', 'both']),
       image: image().optional(),
     }),

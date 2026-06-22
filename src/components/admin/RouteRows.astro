@@ -1,6 +1,6 @@
 ---
 import { GRADES } from '@/lib/grades'
-import { COLOURS } from '@/lib/colours'
+import { COLOURS, colourLabel } from '@/lib/colours'
 import type { RepoRoute } from '@/lib/content-repo'
 
 interface Props {
@@ -22,7 +22,7 @@ const rows = [...routes.map((r) => r as RepoRoute | null), ...Array(blanks).fill
             <option value="">colour...</option>
             {COLOURS.map((c) => (
               <option value={c} selected={route?.colour === c}>
-                {c}
+                {colourLabel(c)}
               </option>
             ))}
           </select>

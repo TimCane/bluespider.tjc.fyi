@@ -3,3 +3,4 @@ pnpm-lock.yaml
 PLAN.md
 dist/
 .astro/
+src/content/

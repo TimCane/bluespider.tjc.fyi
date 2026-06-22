@@ -46,7 +46,7 @@ const href = `/sets/${set.id}`
       <span class="eyebrow">{disciplineLabel[set.data.discipline]}</span>
     </div>
     <p class="text-muted mt-1 text-sm">
-      Set by {set.data.setters.join(', ')}
+      {set.data.setters.length ? `Set by ${set.data.setters.join(', ')}` : 'Setters unknown'}
       {
         past && set.data.stripDate && (
           <span> &middot; stripped {formatDate(set.data.stripDate)}</span>

@@ -1,6 +1,6 @@
 ---
 import type { Route } from '@/lib/catalogue'
-import { COLOUR_CHIP, chipTextColour } from '@/lib/colours'
+import { COLOUR_CHIP, chipBackground, chipTextColour, colourLabel } from '@/lib/colours'
 import { officialGrade } from '@/lib/grades'
 
 interface Props {
@@ -13,9 +13,12 @@ const grade = officialGrade(route.data)
 const regraded = route.data.finalGrade && route.data.finalGrade !== route.data.initialGrade
 
 const chip = COLOUR_CHIP[colour]
+const name = colourLabel(colour)
 const label = regraded
-  ? `${colour} route, regraded from ${route.data.initialGrade} to ${grade}`
-  : `${colour} route, ${grade}`
+  ? `${name} route, regraded from ${route.data.initialGrade} to ${grade}`
+  : `${name} route, ${grade}`
+// Light text on a saturated/split chip gets a faint shadow to stay legible.
+const shadow = chip.dark ? '' : ';text-shadow:0 1px 2px rgba(0,0,0,0.45)'
 ---
 
 <span
@@ -23,7 +26,7 @@ const label = regraded
     'font-mono inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-bold',
     chip.border && 'ring-1 ring-line',
   ]}
-  style={`background:${chip.hex};color:${chipTextColour(colour)}`}
+  style={`background:${chipBackground(colour)};color:${chipTextColour(colour)}${shadow}`}
   title={label}
   aria-label={label}
 >

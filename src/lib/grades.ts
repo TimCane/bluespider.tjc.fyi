@@ -1,6 +1,7 @@
 // French sport grades, ordered hardest-last. Sort routes by index into this
 // array. Extend the array if a grade outside the range ever appears.
 export const GRADES = [
+  '3+',
   '4',
   '4+',
   '5',
@@ -18,6 +19,7 @@ export const GRADES = [
   '7c',
   '7c+',
   '8a',
+  '8a+',
 ] as const
 
 export type Grade = (typeof GRADES)[number]
