@@ -23,7 +23,7 @@ src/content/
 - **Area** - `name`, `order`. id = slug of name, article included
   (`the-cave`).
 - **Wall** - `number`, `area: reference('areas')`, `features` (string[] tags).
-  id = `{area}_{number}` (`the-cave_01`). Seeded by hand in git.
+  id = `{area}_{number}` (`the-cave_01`).
 - **Set** - `wall: reference('walls')`, `setDate`, `stripDate?`, `setter`
   (string), `discipline` (`lead|top-rope|both`), `image?`. Body = optional set
   notes. id = `{setDate}_{wall}` (`2026-06-01_the-cave_01`).
@@ -69,16 +69,15 @@ line over time".
 - **Flow:** form submit -> server writes files -> single atomic commit to `main`
   via the GitHub Git Data API (blobs -> tree -> commit -> update ref) -> Coolify
   deploy webhook rebuilds (~1-2 min) -> live.
-- **Scope:** admin authors areas, sets, and routes (and regrades). Walls are
-  structural and seeded by hand in git.
+- **Scope:** admin authors areas, walls, sets, and routes (and regrades).
 - **New area:** pick "new", enter `name`; `order` auto-appends (`max + 1`).
-  Standing up a brand-new area's first set spans two surfaces: admin creates the
-  area, you hand-commit its wall file in git, then admin authors the set on that
-  wall.
-- **New set:** pick area / wall / date / setter / discipline, plus a colour +
-  grades per route; writes the set folder (`index.md` + uploaded `image.png`)
-  and one route file per colour, and auto-stamps the previous current set's
-  `stripDate = new setDate`. One commit, `2 + N` files.
+- **New wall:** pick "new", enter `number` + `features`, under an existing or
+  new area; writes a wall file.
+- **New set:** pick (or create) area / wall, plus date / setter / discipline and
+  a colour + grades per route; writes the set folder (`index.md` + uploaded
+  `image.png`) and one route file per colour, and auto-stamps the previous
+  current set's `stripDate = new setDate`. One atomic commit - `2 + N` files,
+  plus the new area and/or wall file when those are created in the same flow.
 - **Regrade:** edit a route file's `finalGrade`.
 - **Auth:** single shared password (v1).
 - **GitHub access:** fine-grained PAT (single repo, contents read/write), stored
