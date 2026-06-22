@@ -1,0 +1,213 @@
+---
+export const prerender = false
+
+import AdminLayout from '@/layouts/AdminLayout.astro'
+import { isAuthed } from '@/lib/auth'
+import { loadCatalogue, currentSetForWall, type Catalogue } from '@/lib/content-repo'
+import { formatDate } from '@/lib/dates'
+
+const authed = isAuthed(Astro.cookies)
+let catalogue: Catalogue | null = null
+if (authed) catalogue = await loadCatalogue()
+
+const areas = catalogue ? [...catalogue.areas].sort((a, b) => a.order - b.order) : []
+const wallsByArea = (areaId: string) =>
+  catalogue!.walls.filter((w) => w.area === areaId).sort((a, b) => a.number - b.number)
+const setsForWall = (wallId: string) =>
+  catalogue!.sets
+    .filter((s) => s.wall === wallId)
+    .sort((a, b) => b.setDate.localeCompare(a.setDate))
+---
+
+<AdminLayout title={authed ? 'Catalogue' : 'Sign in'} authed={authed}>
+  {
+    !authed ? (
+      <form method="post" action="/api/login" class="max-w-xs">
+        <label class="label" for="password">
+          Password
+        </label>
+        <input class="control" id="password" type="password" name="password" autofocus />
+        <button class="btn btn-primary mt-3" type="submit">
+          Enter
+        </button>
+      </form>
+    ) : (
+      <>
+        <div class="mb-6 flex flex-wrap gap-2">
+          <a class="btn btn-primary" href="/admin/set/new">
+            + New set
+          </a>
+          <a class="btn" href="/regrade">
+            Regrade queue
+          </a>
+        </div>
+
+        <details class="border-line mb-3 rounded-lg border p-3">
+          <summary class="label cursor-pointer">New area</summary>
+          <form method="post" action="/api/commit" class="mt-3">
+            <input type="hidden" name="action" value="saveArea" />
+            <input type="hidden" name="return" value="/admin" />
+            <div class="field">
+              <label class="label" for="area-name">
+                Name
+              </label>
+              <input class="control" id="area-name" name="name" required />
+            </div>
+            <div class="field">
+              <label class="label" for="area-order">
+                Order (blank = append)
+              </label>
+              <input
+                class="control"
+                id="area-order"
+                name="order"
+                type="number"
+                inputmode="numeric"
+              />
+            </div>
+            <button class="btn btn-primary" type="submit">
+              Add area
+            </button>
+          </form>
+        </details>
+
+        <details class="border-line mb-8 rounded-lg border p-3">
+          <summary class="label cursor-pointer">New wall</summary>
+          <form method="post" action="/api/commit" class="mt-3">
+            <input type="hidden" name="action" value="saveWall" />
+            <input type="hidden" name="return" value="/admin" />
+            <div class="field">
+              <label class="label" for="wall-area">
+                Area
+              </label>
+              <select class="control" id="wall-area" name="area" required>
+                {areas.map((a) => (
+                  <option value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="wall-number">
+                Number
+              </label>
+              <input
+                class="control"
+                id="wall-number"
+                name="number"
+                type="number"
+                inputmode="numeric"
+                required
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="wall-features">
+                Features (comma separated)
+              </label>
+              <input class="control" id="wall-features" name="features" />
+            </div>
+            <button class="btn btn-primary" type="submit">
+              Add wall
+            </button>
+          </form>
+        </details>
+
+        {areas.map((area) => (
+          <section class="mb-10">
+            <div class="border-line flex items-baseline justify-between border-b pb-2">
+              <h2 class="font-display text-2xl">
+                <span class="text-muted font-mono text-sm">
+                  {String(area.order).padStart(2, '0')}
+                </span>{' '}
+                {area.name}
+              </h2>
+              <details>
+                <summary class="btn btn-danger cursor-pointer text-xs">Delete area</summary>
+                <form method="post" action="/api/commit" class="mt-2">
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="kind" value="area" />
+                  <input type="hidden" name="id" value={area.id} />
+                  <input type="hidden" name="return" value="/admin" />
+                  <p class="text-muted mb-2 text-xs">
+                    Deletes the area and every wall, set and route under it. Type{' '}
+                    <code class="font-mono">{area.id}</code> to confirm.
+                  </p>
+                  <input class="control mb-2" name="confirm" placeholder={area.id} />
+                  <button class="btn btn-danger" type="submit">
+                    Delete area
+                  </button>
+                </form>
+              </details>
+            </div>
+
+            {wallsByArea(area.id).map((wall) => {
+              const current = currentSetForWall(catalogue!, wall.id)
+              const sets = setsForWall(wall.id)
+              return (
+                <div class="border-line border-b py-4">
+                  <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="font-display text-xl">Wall {wall.number}</h3>
+                    <a class="btn text-xs" href={`/admin/set/new?wall=${wall.id}`}>
+                      + Set on this wall
+                    </a>
+                  </div>
+                  {wall.features.length > 0 && (
+                    <p class="text-muted font-mono mt-1 text-xs">{wall.features.join(' / ')}</p>
+                  )}
+
+                  <ul class="mt-3 space-y-1">
+                    {sets.length === 0 && <li class="text-muted text-sm">No sets yet.</li>}
+                    {sets.map((set) => (
+                      <li class="flex items-center justify-between gap-3 text-sm">
+                        <a class="hover:text-thread truncate" href={`/admin/set/${set.id}`}>
+                          {formatDate(set.setDate)}
+                          {set.stripDate ? (
+                            <span class="text-muted"> &middot; stripped</span>
+                          ) : (
+                            <span class="text-thread"> &middot; current</span>
+                          )}
+                        </a>
+                        <a class="eyebrow hover:text-ink shrink-0" href={`/admin/set/${set.id}`}>
+                          Edit
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    {current && (
+                      <form method="post" action="/api/commit">
+                        <input type="hidden" name="action" value="strip" />
+                        <input type="hidden" name="setId" value={current.id} />
+                        <input type="hidden" name="return" value="/admin" />
+                        <button class="btn text-xs" type="submit">
+                          Strip current set
+                        </button>
+                      </form>
+                    )}
+                    <details>
+                      <summary class="btn btn-danger cursor-pointer text-xs">Delete wall</summary>
+                      <form method="post" action="/api/commit" class="mt-2">
+                        <input type="hidden" name="action" value="delete" />
+                        <input type="hidden" name="kind" value="wall" />
+                        <input type="hidden" name="id" value={wall.id} />
+                        <input type="hidden" name="return" value="/admin" />
+                        <p class="text-muted mb-2 text-xs">
+                          Deletes the wall and all its sets. Type{' '}
+                          <code class="font-mono">{wall.id}</code> to confirm.
+                        </p>
+                        <input class="control mb-2" name="confirm" placeholder={wall.id} />
+                        <button class="btn btn-danger" type="submit">
+                          Delete wall
+                        </button>
+                      </form>
+                    </details>
+                  </div>
+                </div>
+              )
+            })}
+          </section>
+        ))}
+      </>
+    )
+  }
+</AdminLayout>

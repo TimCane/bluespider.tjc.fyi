@@ -1,0 +1,60 @@
+---
+import { GRADES } from '@/lib/grades'
+import { COLOURS } from '@/lib/colours'
+import type { RepoRoute } from '@/lib/content-repo'
+
+interface Props {
+  routes?: RepoRoute[]
+  blanks?: number
+}
+
+const { routes = [], blanks = 3 } = Astro.props
+const rows = [...routes.map((r) => r as RepoRoute | null), ...Array(blanks).fill(null)]
+---
+
+<fieldset class="border-line rounded-lg border p-3">
+  <legend class="label px-1">Routes (one per colour)</legend>
+  <div class="space-y-3">
+    {
+      rows.map((route, i) => (
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_1fr_2fr]">
+          <select class="control" name={`route-colour-${i}`} aria-label="Colour">
+            <option value="">colour...</option>
+            {COLOURS.map((c) => (
+              <option value={c} selected={route?.colour === c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select class="control" name={`route-initial-${i}`} aria-label="Initial grade">
+            <option value="">grade...</option>
+            {GRADES.map((g) => (
+              <option value={g} selected={route?.initialGrade === g}>
+                {g}
+              </option>
+            ))}
+          </select>
+          <select class="control" name={`route-final-${i}`} aria-label="Final grade">
+            <option value="">final...</option>
+            {GRADES.map((g) => (
+              <option value={g} selected={route?.finalGrade === g}>
+                {g}
+              </option>
+            ))}
+          </select>
+          <input
+            class="control"
+            type="text"
+            name={`route-notes-${i}`}
+            placeholder="beta (optional)"
+            value={route?.notes ?? ''}
+            aria-label="Route notes"
+          />
+        </div>
+      ))
+    }
+  </div>
+  <p class="text-muted mt-2 text-xs">
+    Leave a row's colour blank to skip it. Set a final grade to confirm a regrade.
+  </p>
+</fieldset>

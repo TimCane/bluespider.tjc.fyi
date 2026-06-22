@@ -1,0 +1,96 @@
+---
+export const prerender = false
+
+import AdminLayout from '@/layouts/AdminLayout.astro'
+import RouteRows from '@/components/admin/RouteRows.astro'
+import { loadCatalogue, loadSetRoutes } from '@/lib/content-repo'
+import { formatDate } from '@/lib/dates'
+
+const { set: setIdParam } = Astro.params
+const catalogue = await loadCatalogue()
+const set = catalogue.sets.find((s) => s.id === setIdParam)
+
+if (!set) return new Response('Set not found', { status: 404 })
+
+const wall = catalogue.walls.find((w) => w.id === set.wall)
+const area = wall ? catalogue.areas.find((a) => a.id === wall.area) : undefined
+const routes = await loadSetRoutes(catalogue, set.id)
+const returnTo = `/admin/set/${set.id}`
+---
+
+<AdminLayout title={`Set ${formatDate(set.setDate)}`}>
+  <a href="/admin" class="eyebrow hover:text-ink">&#8592; Catalogue</a>
+
+  <p class="text-muted mt-2 mb-5 text-sm">
+    {area?.name} / Wall {wall?.number} &middot; set {formatDate(set.setDate)}
+    {set.stripDate && <span> &middot; stripped {formatDate(set.stripDate)}</span>}
+  </p>
+
+  <form method="post" action="/api/commit" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="saveSet" />
+    <input type="hidden" name="originalId" value={set.id} />
+    <input type="hidden" name="return" value={returnTo} />
+
+    <div class="field">
+      <label class="label" for="setters">Setters (comma separated)</label>
+      <input class="control" id="setters" name="setters" value={set.setters.join(', ')} required />
+    </div>
+
+    <div class="field">
+      <label class="label" for="discipline">Discipline</label>
+      <select class="control" id="discipline" name="discipline">
+        <option value="lead" selected={set.discipline === 'lead'}>Lead</option>
+        <option value="top-rope" selected={set.discipline === 'top-rope'}>Top rope</option>
+        <option value="both" selected={set.discipline === 'both'}>Lead + top rope</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="label" for="image">
+        Photo {set.image ? '(uploading replaces the current one)' : '(optional)'}
+      </label>
+      {set.image && <p class="text-muted mb-1 font-mono text-xs">current: {set.image}</p>}
+      <input class="control" id="image" name="image" type="file" accept="image/*" />
+    </div>
+
+    <div class="field">
+      <label class="label" for="notes">Set notes (optional)</label>
+      <textarea class="control" id="notes" name="notes">{set.notes}</textarea>
+    </div>
+
+    <div class="field">
+      <RouteRows routes={routes} blanks={2} />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Save changes</button>
+  </form>
+
+  <div class="border-line mt-8 flex flex-wrap gap-2 border-t pt-6">
+    {
+      !set.stripDate && (
+        <form method="post" action="/api/commit">
+          <input type="hidden" name="action" value="strip" />
+          <input type="hidden" name="setId" value={set.id} />
+          <input type="hidden" name="return" value={returnTo} />
+          <button class="btn" type="submit">
+            Strip this set
+          </button>
+        </form>
+      )
+    }
+    <details>
+      <summary class="btn btn-danger cursor-pointer">Delete set</summary>
+      <form method="post" action="/api/commit" class="mt-2">
+        <input type="hidden" name="action" value="delete" />
+        <input type="hidden" name="kind" value="set" />
+        <input type="hidden" name="id" value={set.id} />
+        <input type="hidden" name="return" value="/admin" />
+        <p class="text-muted mb-2 text-xs">
+          Removes the set folder and its routes. Type <code class="font-mono">{set.id}</code> to confirm.
+        </p>
+        <input class="control mb-2" name="confirm" placeholder={set.id} />
+        <button class="btn btn-danger" type="submit">Delete set</button>
+      </form>
+    </details>
+  </div>
+</AdminLayout>
