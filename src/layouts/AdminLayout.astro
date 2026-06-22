@@ -1,0 +1,61 @@
+---
+import '@/styles/global.css'
+
+interface Props {
+  title: string
+  authed?: boolean
+}
+
+const { title, authed = true } = Astro.props
+const params = Astro.url.searchParams
+const ok = params.get('ok')
+const error = params.get('error')
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{title} - bluespider admin</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <header class="border-line border-b">
+      <div class="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
+        <a href="/admin" class="font-display text-xl">
+          bluespider <span class="text-muted text-sm">admin</span>
+        </a>
+        {
+          authed && (
+            <form method="post" action="/api/logout">
+              <button class="eyebrow hover:text-ink" type="submit">
+                Log out
+              </button>
+            </form>
+          )
+        }
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-2xl px-5 py-6">
+      {
+        ok && (
+          <p class="border-thread text-thread mb-5 rounded border bg-white px-4 py-2 text-sm">
+            Committed. The live site rebuilds in a minute or two.
+          </p>
+        )
+      }
+      {
+        error && (
+          <p class="mb-5 rounded border border-red-400 bg-red-50 px-4 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        )
+      }
+      <h1 class="font-display mb-5 text-3xl">{title}</h1>
+      <slot />
+    </main>
+  </body>
+</html>

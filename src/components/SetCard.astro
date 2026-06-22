@@ -1,0 +1,60 @@
+---
+import { Image } from 'astro:assets'
+import type { Set, Route } from '@/lib/catalogue'
+import RouteChip from './RouteChip.astro'
+import { formatDate } from '@/lib/dates'
+
+interface Props {
+  set: Set
+  routes: Route[]
+  // Past sets show their strip date and read quieter.
+  past?: boolean
+}
+
+const { set, routes, past = false } = Astro.props
+
+const disciplineLabel: Record<Set['data']['discipline'], string> = {
+  lead: 'Lead',
+  'top-rope': 'Top rope',
+  both: 'Lead + top rope',
+}
+const href = `/sets/${set.id}`
+---
+
+<a
+  href={href}
+  class:list={[
+    'border-line bg-card group block overflow-hidden rounded-lg border transition-colors',
+    'hover:border-thread',
+    past && 'opacity-80',
+  ]}
+>
+  {
+    set.data.image && (
+      <Image
+        src={set.data.image}
+        alt={`Set on ${formatDate(set.data.setDate)}`}
+        widths={[480, 800]}
+        sizes="(max-width: 640px) 100vw, 640px"
+        class="aspect-[16/9] w-full object-cover"
+      />
+    )
+  }
+  <div class="p-4 sm:p-5">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <span class="font-mono text-sm font-bold">{formatDate(set.data.setDate)}</span>
+      <span class="eyebrow">{disciplineLabel[set.data.discipline]}</span>
+    </div>
+    <p class="text-muted mt-1 text-sm">
+      {set.data.setters.length ? `Set by ${set.data.setters.join(', ')}` : 'Setters unknown'}
+      {
+        past && set.data.stripDate && (
+          <span> &middot; stripped {formatDate(set.data.stripDate)}</span>
+        )
+      }
+    </p>
+    <div class="mt-3 flex flex-wrap gap-1.5">
+      {routes.map((route) => <RouteChip route={route} />)}
+    </div>
+  </div>
+</a>

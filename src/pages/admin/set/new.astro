@@ -1,0 +1,108 @@
+---
+export const prerender = false
+
+import AdminLayout from '@/layouts/AdminLayout.astro'
+import RouteRows from '@/components/admin/RouteRows.astro'
+import { loadCatalogue } from '@/lib/content-repo'
+import { todayInGym } from '@/lib/dates'
+
+const catalogue = await loadCatalogue()
+const areas = [...catalogue.areas].sort((a, b) => a.order - b.order)
+const areaName = new Map(catalogue.areas.map((a) => [a.id, a.name]))
+const walls = [...catalogue.walls].sort(
+  (a, b) =>
+    (areaName.get(a.area) ?? '').localeCompare(areaName.get(b.area) ?? '') || a.number - b.number,
+)
+const preselectWall = Astro.url.searchParams.get('wall') ?? ''
+const today = todayInGym()
+---
+
+<AdminLayout title="New set">
+  <a href="/admin" class="eyebrow hover:text-ink">&#8592; Catalogue</a>
+
+  <form method="post" action="/api/commit" enctype="multipart/form-data" class="mt-4">
+    <input type="hidden" name="action" value="saveSet" />
+    <input type="hidden" name="return" value="/admin" />
+
+    <div class="field">
+      <label class="label" for="wall">Wall</label>
+      <select class="control" id="wall" name="wall" required>
+        <option value="">Pick a wall...</option>
+        {
+          walls.map((w) => (
+            <option value={w.id} selected={w.id === preselectWall}>
+              {areaName.get(w.area)} / Wall {w.number}
+            </option>
+          ))
+        }
+        <option value="__new">+ New wall...</option>
+      </select>
+    </div>
+
+    <details class="border-line mb-4 rounded-lg border p-3">
+      <summary class="label cursor-pointer">New wall details (only if "New wall" above)</summary>
+      <div class="mt-3">
+        <div class="field">
+          <label class="label" for="area">Area</label>
+          <select class="control" id="area" name="area">
+            {areas.map((a) => <option value={a.id}>{a.name}</option>)}
+            <option value="__new">+ New area...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="newAreaName">New area name (only if "New area")</label>
+          <input class="control" id="newAreaName" name="newAreaName" />
+        </div>
+        <div class="field">
+          <label class="label" for="newWallNumber">New wall number</label>
+          <input
+            class="control"
+            id="newWallNumber"
+            name="newWallNumber"
+            type="number"
+            inputmode="numeric"
+          />
+        </div>
+        <div class="field">
+          <label class="label" for="newWallFeatures">New wall features (comma separated)</label>
+          <input class="control" id="newWallFeatures" name="newWallFeatures" />
+        </div>
+      </div>
+    </details>
+
+    <div class="field">
+      <label class="label" for="setDate">Set date</label>
+      <input class="control" id="setDate" name="setDate" type="date" value={today} required />
+    </div>
+
+    <div class="field">
+      <label class="label" for="setters">Setters (comma separated)</label>
+      <input class="control" id="setters" name="setters" required />
+    </div>
+
+    <div class="field">
+      <label class="label" for="discipline">Discipline</label>
+      <select class="control" id="discipline" name="discipline">
+        <option value="lead">Lead</option>
+        <option value="top-rope">Top rope</option>
+        <option value="both">Lead + top rope</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="label" for="image">Photo (optional)</label>
+      <input class="control" id="image" name="image" type="file" accept="image/*" />
+    </div>
+
+    <div class="field">
+      <label class="label" for="notes">Set notes (optional)</label>
+      <textarea class="control" id="notes" name="notes"></textarea>
+    </div>
+
+    <div class="field">
+      <RouteRows blanks={5} />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Commit set</button>
+  </form>
+</AdminLayout>
