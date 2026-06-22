@@ -40,13 +40,13 @@ exception to the usual PR rule, since this is data, not code.
 
 Required env vars (server-only, set in the Coolify dashboard):
 
-| Variable         | Purpose                                                       |
-| ---------------- | ------------------------------------------------------------ |
-| `ADMIN_PASSWORD` | Shared password for the admin login.                         |
-| `SESSION_SECRET` | Secret used to sign the session cookie.                      |
-| `GITHUB_TOKEN`   | Fine-grained PAT, single repo, contents read/write.          |
-| `GITHUB_REPO`    | Target repo as `owner/name`.                                 |
-| `GITHUB_BRANCH`  | Optional, defaults to `main`.                                |
+| Variable         | Purpose                                             |
+| ---------------- | --------------------------------------------------- |
+| `ADMIN_PASSWORD` | Shared password for the admin login.                |
+| `SESSION_SECRET` | Secret used to sign the session cookie.             |
+| `GITHUB_TOKEN`   | Fine-grained PAT, single repo, contents read/write. |
+| `GITHUB_REPO`    | Target repo as `owner/name`.                        |
+| `GITHUB_BRANCH`  | Optional, defaults to `main`.                       |
 
 The gym timezone (for the `/regrade` 14-day cutoff) is the `GYM_TZ` constant in
 `src/lib/dates.ts`.

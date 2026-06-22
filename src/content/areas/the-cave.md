@@ -1,4 +1,4 @@
 ---
 name: The Cave
-order: 1
+order: 5
 ---
