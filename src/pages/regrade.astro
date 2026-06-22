@@ -1,0 +1,65 @@
+---
+export const prerender = false
+
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getRegradeCandidates } from '@/lib/catalogue'
+import { COLOUR_CHIP } from '@/lib/colours'
+import { todayInGym, daysBetween, formatDate } from '@/lib/dates'
+
+const today = todayInGym()
+const rows = await getRegradeCandidates(today)
+---
+
+<BaseLayout
+  title="Regrade"
+  description="Routes that have been up long enough to deserve a confirmed grade."
+>
+  <header class="mt-2">
+    <h1 class="font-display text-4xl sm:text-5xl">Regrade</h1>
+    <p class="text-muted mt-2 max-w-prose text-sm">
+      Routes on current sets that have been up 14 days or more and still carry only the setter's
+      provisional grade. Time to confirm a grade from the feedback.
+    </p>
+  </header>
+
+  {
+    rows.length === 0 ? (
+      <p class="border-line text-muted mt-8 rounded-lg border border-dashed px-4 py-6 text-center text-sm">
+        Nothing waiting. Every current route 14 days or older has a confirmed grade.
+      </p>
+    ) : (
+      <ul class="border-line mt-8 border-t">
+        {rows.map(({ route, set, wall, area }) => {
+          const chip = COLOUR_CHIP[route.data.colour]
+          const age = daysBetween(set.data.setDate, today)
+          return (
+            <li class="border-line border-b">
+              <a href={`/sets/${set.id}`} class="group flex items-center gap-3 py-3">
+                <span
+                  class:list={[
+                    'inline-block h-4 w-4 shrink-0 rounded-full',
+                    chip.border && 'ring-1 ring-line',
+                  ]}
+                  style={`background:${chip.hex}`}
+                  aria-hidden="true"
+                />
+                <span class="min-w-0 flex-1">
+                  <span class="group-hover:text-thread block truncate">
+                    {area.data.name} &middot; Wall {wall.data.number}
+                  </span>
+                  <span class="text-muted font-mono block text-xs">
+                    {route.data.colour} &middot; set {formatDate(set.data.setDate)}
+                  </span>
+                </span>
+                <span class="text-right">
+                  <span class="font-mono block font-bold">{route.data.initialGrade}</span>
+                  <span class="text-muted block text-xs">{age} days</span>
+                </span>
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+    )
+  }
+</BaseLayout>

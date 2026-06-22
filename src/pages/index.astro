@@ -1,0 +1,79 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import SetCard from '@/components/SetCard.astro'
+import {
+  getAreasSorted,
+  getWallsForArea,
+  getSetsForWall,
+  currentSet,
+  getRoutesForSet,
+} from '@/lib/catalogue'
+
+const areas = await getAreasSorted()
+
+const sections = await Promise.all(
+  areas.map(async (area) => {
+    const walls = await getWallsForArea(area.id)
+    const wallRows = await Promise.all(
+      walls.map(async (wall) => {
+        const current = currentSet(await getSetsForWall(wall.id))
+        const routes = current ? await getRoutesForSet(current.id) : []
+        return { wall, current, routes }
+      }),
+    )
+    return { area, wallRows }
+  }),
+)
+---
+
+<BaseLayout>
+  {
+    sections.map(({ area, wallRows }) => (
+      <section class="mt-12 first:mt-2">
+        <div class="border-line flex items-baseline gap-3 border-b pb-2">
+          <span class="eyebrow">{String(area.data.order).padStart(2, '0')}</span>
+          <h2 class="font-display text-2xl sm:text-3xl">{area.data.name}</h2>
+        </div>
+
+        <div class="relative mt-6 pl-7">
+          {/* The blue thread linking every wall in the area. */}
+          <span class="bg-thread absolute top-3 bottom-3 left-[7px] w-[2px]" aria-hidden="true" />
+          <div class="space-y-8">
+            {wallRows.map(({ wall, current, routes }) => (
+              <div class="relative">
+                <span
+                  class="bg-thread ring-paper absolute top-2 left-[3px] h-2.5 w-2.5 rounded-full ring-4"
+                  aria-hidden="true"
+                />
+                <a href={`/walls/${wall.id}`} class="group inline-flex items-baseline gap-3">
+                  <span class="eyebrow">Wall</span>
+                  <span class="font-display text-2xl leading-none group-hover:text-thread">
+                    {wall.data.number}
+                  </span>
+                </a>
+                {wall.data.features.length > 0 && (
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    {wall.data.features.map((feature) => (
+                      <span class="border-line text-muted font-mono rounded border px-1.5 py-0.5 text-xs">
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div class="mt-3">
+                  {current ? (
+                    <SetCard set={current} routes={routes} />
+                  ) : (
+                    <p class="border-line text-muted rounded-lg border border-dashed px-4 py-3 text-sm eyebrow">
+                      Stripped &middot; awaiting reset
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    ))
+  }
+</BaseLayout>

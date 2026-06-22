@@ -1,0 +1,38 @@
+---
+import type { Route } from '@/lib/catalogue'
+import { COLOUR_CHIP, chipTextColour } from '@/lib/colours'
+import { officialGrade } from '@/lib/grades'
+
+interface Props {
+  route: Route
+}
+
+const { route } = Astro.props
+const { colour } = route.data
+const grade = officialGrade(route.data)
+const regraded = route.data.finalGrade && route.data.finalGrade !== route.data.initialGrade
+
+const chip = COLOUR_CHIP[colour]
+const label = regraded
+  ? `${colour} route, regraded from ${route.data.initialGrade} to ${grade}`
+  : `${colour} route, ${grade}`
+---
+
+<span
+  class:list={[
+    'font-mono inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-bold',
+    chip.border && 'ring-1 ring-line',
+  ]}
+  style={`background:${chip.hex};color:${chipTextColour(colour)}`}
+  title={label}
+  aria-label={label}
+>
+  {grade}
+  {
+    regraded && (
+      <span class="opacity-70" aria-hidden="true">
+        &#8226;
+      </span>
+    )
+  }
+</span>

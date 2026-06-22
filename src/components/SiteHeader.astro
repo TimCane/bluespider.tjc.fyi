@@ -1,0 +1,23 @@
+---
+const path = Astro.url.pathname
+const onRegrade = path.startsWith('/regrade')
+---
+
+<header class="mx-auto w-full max-w-3xl px-5 pt-8 pb-6 sm:px-6">
+  <div class="flex items-end justify-between gap-4">
+    <a href="/" class="group inline-flex items-baseline gap-2">
+      <!-- The blue spider: a single thread anchoring the wordmark. -->
+      <span
+        class="bg-thread inline-block h-5 w-[3px] translate-y-[2px] rounded-full"
+        aria-hidden="true"></span>
+      <span class="font-display text-3xl leading-none font-semibold tracking-tight sm:text-4xl">
+        bluespider
+      </span>
+    </a>
+    <nav class="flex gap-4 eyebrow">
+      <a href="/" class:list={[!onRegrade && 'text-ink', 'hover:text-ink']}>Walls</a>
+      <a href="/regrade" class:list={[onRegrade && 'text-ink', 'hover:text-ink']}>Regrade</a>
+    </nav>
+  </div>
+  <p class="text-muted mt-2 eyebrow">Gym route catalogue</p>
+</header>

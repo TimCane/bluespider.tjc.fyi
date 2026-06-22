@@ -1,0 +1,139 @@
+---
+import { getCollection, getEntry, render } from 'astro:content'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { Image } from 'astro:assets'
+import { getRoutesForSet } from '@/lib/catalogue'
+import { COLOUR_CHIP } from '@/lib/colours'
+import { officialGrade } from '@/lib/grades'
+import { formatDate } from '@/lib/dates'
+
+export const getStaticPaths = async () => {
+  const sets = await getCollection('sets')
+  return sets.map((set) => ({ params: { set: set.id }, props: { set } }))
+}
+
+const { set } = Astro.props
+const wall = await getEntry(set.data.wall)
+const area = wall ? await getEntry(wall.data.area) : undefined
+const routes = await getRoutesForSet(set.id)
+const { Content } = await render(set)
+
+const disciplineLabel = { lead: 'Lead', 'top-rope': 'Top rope', both: 'Lead + top rope' } as const
+
+const routeNotes = await Promise.all(
+  routes.map(async (route) => {
+    if (!route.body?.trim()) return { id: route.id, Content: null }
+    const rendered = await render(route)
+    return { id: route.id, Content: rendered.Content }
+  }),
+)
+const notesById = new Map(routeNotes.map((n) => [n.id, n.Content]))
+---
+
+<BaseLayout title={`Set ${formatDate(set.data.setDate)}`}>
+  {
+    wall && (
+      <a href={`/walls/${wall.id}`} class="eyebrow hover:text-ink">
+        &#8592; Wall {wall.data.number}
+        {area && `, ${area.data.name}`}
+      </a>
+    )
+  }
+
+  <header class="mt-4">
+    <span class="eyebrow">{set.data.stripDate ? 'Past set' : 'Current set'}</span>
+    <h1 class="font-display mt-1 text-4xl sm:text-5xl">{formatDate(set.data.setDate)}</h1>
+    <dl class="text-muted mt-3 space-y-1 text-sm">
+      <div class="flex gap-2">
+        <dt class="eyebrow w-24 shrink-0">Setters</dt>
+        <dd class="text-ink">{set.data.setters.join(', ')}</dd>
+      </div>
+      <div class="flex gap-2">
+        <dt class="eyebrow w-24 shrink-0">Discipline</dt>
+        <dd class="text-ink">{disciplineLabel[set.data.discipline]}</dd>
+      </div>
+      {
+        set.data.stripDate && (
+          <div class="flex gap-2">
+            <dt class="eyebrow w-24 shrink-0">Stripped</dt>
+            <dd class="text-ink">{formatDate(set.data.stripDate)}</dd>
+          </div>
+        )
+      }
+    </dl>
+  </header>
+
+  {
+    set.data.image && (
+      <Image
+        src={set.data.image}
+        alt={`Set on ${formatDate(set.data.setDate)}`}
+        widths={[480, 800, 1200]}
+        sizes="(max-width: 768px) 100vw, 768px"
+        class="border-line mt-6 aspect-[16/9] w-full rounded-lg border object-cover"
+      />
+    )
+  }
+
+  <section class="mt-8">
+    <h2 class="eyebrow mb-2">Routes</h2>
+    <ul class="border-line border-t">
+      {
+        routes.map((route) => {
+          const chip = COLOUR_CHIP[route.data.colour]
+          const regraded =
+            route.data.finalGrade && route.data.finalGrade !== route.data.initialGrade
+          const Notes = notesById.get(route.id)
+          return (
+            <li class="border-line border-b py-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                  <span
+                    class:list={[
+                      'inline-block h-4 w-4 rounded-full',
+                      chip.border && 'ring-1 ring-line',
+                    ]}
+                    style={`background:${chip.hex}`}
+                    aria-hidden="true"
+                  />
+                  <span class="capitalize">{route.data.colour}</span>
+                </div>
+                <span class="font-mono font-bold">
+                  {regraded ? (
+                    <span>
+                      <span class="text-muted font-normal line-through">
+                        {route.data.initialGrade}
+                      </span>
+                      <span class="text-muted px-1" aria-hidden="true">
+                        &#8594;
+                      </span>
+                      {officialGrade(route.data)}
+                    </span>
+                  ) : (
+                    officialGrade(route.data)
+                  )}
+                </span>
+              </div>
+              {Notes && (
+                <div class="text-muted mt-2 max-w-prose text-sm [&>p]:mt-1">
+                  <Notes />
+                </div>
+              )}
+            </li>
+          )
+        })
+      }
+    </ul>
+  </section>
+
+  {
+    set.body?.trim() && (
+      <section class="mt-8">
+        <h2 class="eyebrow mb-2">Set notes</h2>
+        <div class="max-w-prose text-sm [&>p]:mt-2">
+          <Content />
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>

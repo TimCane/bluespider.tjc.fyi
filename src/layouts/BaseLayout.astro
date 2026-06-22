@@ -1,0 +1,37 @@
+---
+import '@/styles/global.css'
+import SiteHeader from '@/components/SiteHeader.astro'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const { title = 'bluespider', description = "What's on the walls at the climbing gym right now." } =
+  Astro.props
+
+const fullTitle = title === 'bluespider' ? 'bluespider' : `${title} - bluespider`
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <SiteHeader />
+    <main class="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-6">
+      <slot />
+    </main>
+    <footer class="mx-auto w-full max-w-3xl px-5 pb-10 sm:px-6">
+      <div class="border-line text-muted flex justify-between border-t pt-4 eyebrow">
+        <span>bluespider</span>
+        <a href="/admin" class="hover:text-ink">Admin</a>
+      </div>
+    </footer>
+  </body>
+</html>
